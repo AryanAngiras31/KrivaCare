@@ -1,0 +1,24 @@
+# --- Core Deep Learning & Machine Learning ---
+torch
+torchvision
+scikit-learn
+
+# --- Data Manipulation & I/O ---
+pandas
+numpy
+openpyxl       # Required for pandas to read .xlsx files
+joblib         # For saving/loading the scaler
+
+# --- Image Processing & Visualization ---
+Pillow
+matplotlib
+
+# --- Explainability ---
+shap           # For Tabular Feature Importances
+grad-cam       # For ResNet18 Ultrasound Heatmaps (pytorch-grad-cam)
+
+# --- Utilities ---
+tqdm           # For training loop progress bars
+
+# --- UI / Deployment (For your future App) ---
+streamlit
