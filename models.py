@@ -13,17 +13,18 @@ class ImageExpert(nn.Module):
         return self.backbone(x)
 
 class TabularExpert(nn.Module):
-    def __init__(self, input_dim, num_classes=3):
+    def __init__(self, input_dim, num_classes=2):
         super(TabularExpert, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(input_dim, 128),
-            nn.BatchNorm1d(128),
+            nn.Linear(input_dim, 32),
+            nn.BatchNorm1d(32),
             nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(128, 64),
+            nn.Dropout(0.5),  # Aggressive 50% dropout
+            nn.Linear(32, 16),
+            nn.BatchNorm1d(16),
             nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(64, num_classes)
+            nn.Dropout(0.5),  # Aggressive 50% dropout
+            nn.Linear(16, num_classes)
         )
 
     def forward(self, x):

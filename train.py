@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 import config
 from preprocessing import run_tabular_preprocessing, run_image_metadata_preprocessing
@@ -49,7 +50,7 @@ def train_tabular_expert():
     
     class_weights = torch.tensor([0.8, 1.3], dtype=torch.float).to(config.DEVICE)
     criterion = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = optim.AdamW(model.parameters(), lr=config.LEARNING_RATE, weight_decay=5e-5)
+    optimizer = optim.AdamW(model.parameters(), lr=5e-4, weight_decay=1e-2)
     
     best_acc = 0.0
     
@@ -142,7 +143,7 @@ def train_image_expert():
         correct = 0
         total = 0
         
-        for images, labels in train_loader:
+        for images, labels in tqdm(train_loader, desc=f"Image Epoch {epoch}/{config.EPOCHS}"):
             images, labels = images.to(config.DEVICE), labels.to(config.DEVICE)
             
             optimizer.zero_grad()
