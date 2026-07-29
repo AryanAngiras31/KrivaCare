@@ -47,8 +47,9 @@ def train_tabular_expert():
     input_dim = train_dataset.features.shape[1]
     model = TabularExpert(input_dim=input_dim, num_classes=config.NUM_CLASSES).to(config.DEVICE)
     
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=config.LEARNING_RATE, weight_decay=1e-4)
+    class_weights = torch.tensor([0.8, 1.3], dtype=torch.float).to(config.DEVICE)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    optimizer = optim.AdamW(model.parameters(), lr=config.LEARNING_RATE, weight_decay=5e-5)
     
     best_acc = 0.0
     
