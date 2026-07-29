@@ -142,27 +142,86 @@ class ClinicalInferencePipeline:
         print(f"Saved Grad-CAM visualization to {cam_save_path}")
         plt.close() # Close figure to free memory
 
-        # 2. Show SHAP Force Plot for Tabular Features
+        # 2. Show SHAP Bar Plot for Tabular Features
         if shap_values is not None:
             print("\nSHAP Feature Importances (Tabular Model):")
-            shap.initjs()
             
-            # Convert to numpy for plotting
-            shap_numpy = shap_values[0] if isinstance(shap_values, list) else shap_values
+            # --- Robust SHAP Array Extraction ---
+            if isinstance(shap_values, torch.Tensor):
+                shap_values = shap_values.cpu().numpy()
+                
+            if isinstance(shap_values, list):
+                # Extract the array for Class 1 (Benign)
+                shap_array = np.array(shap_values[1] if len(shap_values) > 1 else shap_values[0])
+            else:
+                shap_array = np.array(shap_values)
+
+            # Squeeze out the batch dimension (e.g., shape (1, 50, 2) -> (50, 2))
+            shap_array = np.squeeze(shap_array)
+
+            # If classes are still attached to the shape, extract the positive class
+            if shap_array.ndim == 2:
+                if shap_array.shape[1] == config.NUM_CLASSES:  # Shape: (50, 2)
+                    shap_array = shap_array[:, 1]
+                elif shap_array.shape[0] == config.NUM_CLASSES:  # Shape: (2, 50)
+                    shap_array = shap_array[1, :]
+
+            # Force to 1D
+            shap_array = shap_array.flatten()
             
+            # Failsafe: Truncate if it's still somehow the wrong length
+            if len(shap_array) != len(self.feature_cols):
+                shap_array = shap_array[:len(self.feature_cols)]
+            # ------------------------------------
+                
+            # Create a DataFrame to sort and filter the top features easily
+            importance_df = pd.DataFrame({
+                'Feature': self.feature_cols,
+                'SHAP Value': shap_array,
+                'Patient Value': feature_df.iloc[0].values
+            })
+            
+            # Sort by absolute SHAP value to find the top 10 most impactful biomarkers
+            importance_df['Abs_SHAP'] = importance_df['SHAP Value'].abs()
+            top_10 = importance_df.sort_values(by='Abs_SHAP', ascending=True).tail(10)
+            
+            # Plotting the Bar Chart
             plt.figure(figsize=(10, 6))
-            shap.summary_plot(
-                shap_numpy, 
-                feature_df, 
-                feature_names=self.feature_cols, 
-                plot_type="bar",
-                show=False # Prevent automatic display so we can save it
-            )
+            # Red pushes prediction toward Benign, Blue pushes toward Malignant
+            colors = ['#9999ff' if x > 0 else '#ff9999' for x in top_10['SHAP Value']]
             
-            # Save SHAP result
+            bars = plt.barh(top_10['Feature'], top_10['SHAP Value'], color=colors, edgecolor='black')
+            
+            # Add the patient's actual lab value as text next to the center line (x=0)
+            for bar, val in zip(bars, top_10['Patient Value']):
+                try:
+                    val_str = f"{float(val):.2f}"
+                except (ValueError, TypeError):
+                    val_str = str(val)
+                
+                # Check which way the bar is pointing
+                bar_width = bar.get_width()
+                
+                if bar_width < 0:
+                    # Bar goes left (Red). Place text just to the right of the middle line.
+                    text_x = 0.01
+                    align = 'left'
+                else:
+                    # Bar goes right (Blue). Place text just to the left of the middle line.
+                    text_x = -0.01
+                    align = 'right'
+                
+                # Draw the text next to the middle
+                plt.text(text_x, bar.get_y() + bar.get_height()/2, f"Lab Value: {val_str}", 
+                         va='center', ha=align, color='black', fontsize=10)
+                
+            plt.title("Top 10 Biomarkers Driving This Patient's Diagnosis")
+            plt.xlabel("SHAP Value (Red = Pushes to Malignant, Blue = Pushes to Benign)")
+            
+            # Save the clean SHAP result
             shap_save_path = os.path.join(config.FIGURES_DIR, 'shap_result.png')
             plt.savefig(shap_save_path, bbox_inches='tight')
-            print(f"Saved SHAP visualization to {shap_save_path}")
+            print(f"Saved clinical SHAP visualization to {shap_save_path}")
             plt.close()
 
 # ==========================================
