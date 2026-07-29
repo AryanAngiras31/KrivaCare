@@ -48,9 +48,10 @@ def train_tabular_expert():
     input_dim = train_dataset.features.shape[1]
     model = TabularExpert(input_dim=input_dim, num_classes=config.NUM_CLASSES).to(config.DEVICE)
     
-    class_weights = torch.tensor([0.8, 1.3], dtype=torch.float).to(config.DEVICE)
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = optim.AdamW(model.parameters(), lr=5e-4, weight_decay=1e-2)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-3)
+    # Add the Cosine Annealing Scheduler
+    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.EPOCHS)
     
     best_acc = 0.0
     
@@ -63,11 +64,17 @@ def train_tabular_expert():
         for features, labels in train_loader:
             features, labels = features.to(config.DEVICE), labels.to(config.DEVICE)
             
+            # Inject 5% random Gaussian noise only during training
+            if model.training:
+                noise = torch.randn_like(features) * 0.05
+                features = features + noise
+            
             optimizer.zero_grad()
             outputs = model(features)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
+            scheduler.step()
             
             running_loss += loss.item() * features.size(0)
             _, predicted = torch.max(outputs, 1)

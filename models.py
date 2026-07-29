@@ -19,11 +19,11 @@ class TabularExpert(nn.Module):
             nn.Linear(input_dim, 32),
             nn.BatchNorm1d(32),
             nn.ReLU(),
-            nn.Dropout(0.5),  # Aggressive 50% dropout
+            nn.Dropout(0.3),  # 30% dropout
             nn.Linear(32, 16),
             nn.BatchNorm1d(16),
             nn.ReLU(),
-            nn.Dropout(0.5),  # Aggressive 50% dropout
+            nn.Dropout(0.3),  # 30% dropout
             nn.Linear(16, num_classes)
         )
 

@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 import joblib
 from config import TABULAR_DIR, ARTIFACTS_DIR, IMAGE_DIR
 
@@ -33,24 +34,44 @@ def run_tabular_preprocessing():
     train_path = os.path.join(TABULAR_DIR, 'tabular_train.xlsx')
     test_path = os.path.join(TABULAR_DIR, 'tabular_test.xlsx')
     
-    train_df = clean_tabular_data(pd.read_excel(train_path, sheet_name=0))
-    test_df = clean_tabular_data(pd.read_excel(test_path, sheet_name=0))
+    # 1. Load both datasets
+    df1 = pd.read_excel(train_path, sheet_name=0)
+    df2 = pd.read_excel(test_path, sheet_name=0)
     
-    feature_cols = [c for c in train_df.columns if c != 'TYPE']
-    medians = train_df[feature_cols].median()
+    # 2. Combine them into a single dataset
+    df_all = pd.concat([df1, df2], ignore_index=True)
     
-    train_df[feature_cols] = train_df[feature_cols].fillna(medians)
-    test_df[feature_cols] = test_df[feature_cols].fillna(medians)
+    # 3. Clean string artifacts and drop IDs
+    df_all = clean_tabular_data(df_all)
     
+    # Separate features and target
+    X = df_all.drop(columns=['TYPE'])
+    y = df_all['TYPE']
+    feature_cols = X.columns.tolist()
+    
+    # 4. Perform a Stratified 80/20 Split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.20, stratify=y, random_state=42
+    )
+    
+    # 5. Calculate medians STRICTLY on the training set to prevent data leakage
+    medians = X_train.median()
+    
+    # 6. Impute missing values
+    X_train = X_train.fillna(medians)
+    X_test = X_test.fillna(medians)
+    
+    # 7. Feature Scaling (Fit on train, transform on both)
     scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(train_df[feature_cols].values)
-    X_test_scaled = scaler.transform(test_df[feature_cols].values)
+    X_train_scaled = scaler.fit_transform(X_train.values)
+    X_test_scaled = scaler.transform(X_test.values)
     
+    # 8. Rebuild DataFrames for saving
     train_processed = pd.DataFrame(X_train_scaled, columns=feature_cols)
-    train_processed['RiskTier'] = train_df['TYPE'].values
+    train_processed['RiskTier'] = y_train.values
     
     test_processed = pd.DataFrame(X_test_scaled, columns=feature_cols)
-    test_processed['RiskTier'] = test_df['TYPE'].values
+    test_processed['RiskTier'] = y_test.values
     
     # Save cleaned CSV files into TABULAR_DIR
     train_processed.to_csv(os.path.join(TABULAR_DIR, 'cleaned_train.csv'), index=False)
@@ -60,7 +81,9 @@ def run_tabular_preprocessing():
     os.makedirs(ARTIFACTS_DIR, exist_ok=True)
     joblib.dump(scaler, os.path.join(ARTIFACTS_DIR, 'tabular_scaler.pkl'))
     medians.to_pickle(os.path.join(ARTIFACTS_DIR, 'tabular_medians.pkl'))
-    print("Tabular data preprocessed & saved successfully.")
+    
+    print(f"Tabular data preprocessed & saved successfully.")
+    print(f"New Train Size: {len(train_processed)} | New Test Size: {len(test_processed)}")
 
 def run_image_metadata_preprocessing():
     print("--- 2. Preprocessing MMOTU Image Metadata ---")

@@ -18,7 +18,7 @@ NUM_CLASSES = 2  # Binary: 0 = Malignant, 1 = Benign
 TABULAR_INPUT_DIM = 50 
 BATCH_SIZE = 32
 LEARNING_RATE = 1e-4
-EPOCHS = 20
+EPOCHS = 40
 
 # Reproducibility
 SEED = 42
