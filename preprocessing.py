@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import joblib
-from  config import OUTPUT_DIR
+from  config import DATA_DIR, OUTPUT_DIR
 
 def clean_tabular_data(df, is_train=True):
     # 1. Drop unused or identifying columns
@@ -21,7 +21,7 @@ def clean_tabular_data(df, is_train=True):
             
     return df
 
-def run_preprocessing(train_path, test_path, output_dir):
+def run_preprocessing(train_path, test_path):
     print("--- Starting Tabular Preprocessing ---")
     
     # Load raw excel sheets
@@ -60,23 +60,22 @@ def run_preprocessing(train_path, test_path, output_dir):
     test_processed['RiskTier'] = y_test
     
     # Create outputs dir
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     
     # Save the cleaned datasets
-    train_processed.to_csv(os.path.join(output_dir, 'cleaned_train.csv'), index=False)
-    test_processed.to_csv(os.path.join(output_dir, 'cleaned_test.csv'), index=False)
+    train_processed.to_csv(train_path, index=False)
+    test_processed.to_csv(test_path, index=False)
     
     # Save the scaler and medians for future inference
-    joblib.dump(scaler, os.path.join(output_dir, 'tabular_scaler.pkl'))
-    medians.to_pickle(os.path.join(output_dir, 'tabular_medians.pkl'))
+    joblib.dump(scaler, os.path.join(OUTPUT_DIR, 'artifacts', 'tabular_scaler.pkl'))
+    medians.to_pickle(os.path.join(OUTPUT_DIR, 'artifacts', 'tabular_medians.pkl'))
     
-    print(f"✅ Processed Train Rows: {len(train_processed)}")
-    print(f"✅ Processed Test Rows:  {len(test_processed)}")
-    print(f"✅ Preprocessing artifacts saved to {output_dir}")
+    print(f"Processed Train Rows: {len(train_processed)}")
+    print(f"Processed Test Rows:  {len(test_processed)}")
+    print(f"Preprocessing artifacts saved to {OUTPUT_DIR}")
 
 if __name__ == "__main__":
     run_preprocessing(
-        train_path='tabular_train.xlsx',
-        test_path='tabular_test.xlsx',
-        output_dir='data/tabular'
+        train_path=os.path.join(DATA_DIR, 'tabular', 'tabular_train.xlsx'),
+        test_path=os.path.join(DATA_DIR, 'tabular', 'tabular_test.xlsx'),
     )
