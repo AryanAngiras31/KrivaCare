@@ -56,6 +56,16 @@ class ClinicalInferencePipeline:
         """Cleans, imputes, and scales a single patient's raw clinical dictionary."""
         df = pd.DataFrame([patient_dict])
         
+        # --- Clean Raw String Artifacts (e.g., '<0.600', '>1000') ---
+        cols_to_clean = ['AFP', 'CA125', 'CA19-9']
+        for col in cols_to_clean:
+            if col in df.columns:
+                df[col] = df[col].astype(str).str.replace('>', '', regex=False)
+                df[col] = df[col].astype(str).str.replace('<', '', regex=False)
+                df[col] = df[col].astype(str).str.replace('\t', '', regex=False)
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        # -------------------------------------------------------------
+        
         # Ensure all required features exist; impute missing ones with training medians
         for col in self.feature_cols:
             if col not in df.columns or pd.isna(df[col].iloc[0]):
