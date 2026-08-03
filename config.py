@@ -10,6 +10,7 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 ARTIFACTS_DIR = os.path.join(OUTPUT_DIR, "artifacts")
 MODELS_DIR = os.path.join(OUTPUT_DIR, "models")
 FIGURES_DIR = os.path.join(OUTPUT_DIR, "figures")
+RESULTS_DIR = os.path.join(OUTPUT_DIR, "results")
 
 # Hardware Configuration
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")

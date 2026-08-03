@@ -1,0 +1,4 @@
+Model Architecture,Accuracy,Precision (Macro),Recall (Macro),F1-Score (Macro)
+Image-Only Expert (ResNet18),0.9135,0.9541,0.7,0.7617
+Tabular-Only Expert (MLP),0.9615,0.9221,0.9221,0.9221
+Uncertainty-Aware Fusion,0.9038,0.9495,0.6667,0.7234
