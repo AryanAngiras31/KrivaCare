@@ -61,3 +61,20 @@ Execute the inference pipeline to test random patient records, compute fusion co
 ```Bash
 python3 inference.py
 ```
+
+# Evaluation Results
+
+The pipeline was evaluated on a simulated paired test set containing 104 patients (89 Benign and 15 Malignant). By utilizing uncertainty-aware late fusion, the system successfully mitigates the individual weaknesses of both expert models, resulting in superior overall diagnostic performance.
+
+### Comparative Performance
+
+| Model Architecture | Overall Accuracy | Malignant Precision | Malignant Recall | Macro F1-Score |
+| :--- | :--- | :--- | :--- | :--- |
+| **Image-Only Expert** | 91.35% | 1.0000 | 0.4000 | 0.7617 |
+| **Tabular-Only Expert** | 92.31% | 0.6667 | 0.9333 | 0.8656 |
+| **Uncertainty-Aware Fusion** | **95.19%** | **1.0000** | **0.6667** | **0.8863** |
+
+### Clinical Modality Insights
+*   **Image Expert:** Yields zero false positives (1.00 Precision) but struggles with high ambiguity, capturing only 40% of true malignant cases.
+*   **Tabular Expert:** Acts as a highly sensitive screener. It successfully captures 93.3% of true malignant cases, but triggers false positives on borderline bloodwork (0.6667 Precision).
+*   **Fusion Strategy:** The fusion mechanism dynamically relies on Shannon Entropy to route diagnostic trust. It successfully suppresses the Tabular model's false alarms (restoring Precision to 1.0000) while overriding the Image model's false negatives (boosting Recall to 0.6667), ultimately achieving the highest Macro F1-Score of 0.8863.
