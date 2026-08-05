@@ -12,7 +12,7 @@ class ImageExpert(nn.Module):
     def forward(self, x):
         return self.backbone(x)
 
-class TabularExpert(nn.Module):
+class TabularExpert(nn.Module): 
     def __init__(self, input_dim, num_classes=2):
         super(TabularExpert, self).__init__()
         self.network = nn.Sequential(
